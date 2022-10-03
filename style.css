@@ -5,9 +5,9 @@
     margin: 0;
     padding: 0;
 }
-/* body{
+ body{
     height:100vh;
-} */
+}
 header {
     text-align: center;
     margin:0;
@@ -313,7 +313,7 @@ footer .footer-icons{
     margin:20px;
 }
 #about div{
-     display:flex;
+     display:flex; 
 }
 
 #about img{

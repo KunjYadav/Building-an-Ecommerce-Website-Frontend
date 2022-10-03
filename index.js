@@ -107,14 +107,6 @@ document.addEventListener('click', (e) => {
         document.querySelector('#cart').style = "display:none;"
     }
 
-    if (e.target.className == 'purchase-btn') {
-        if (parseInt(document.querySelector('.cart-number').innerText) === 0) {
-            alert('You have Nothing in Cart , Add some products to purchase !');
-            return
-        }
-        alert('This Feature is yet to be completed ')
-    }
-
     if (e.target.innerText == 'REMOVE') {
         axios.post('http://localhost:3000/cart-delete-item', { 'productId': event.target.parentNode.parentNode.id.substring(8) })
             .then(response => {
@@ -124,34 +116,51 @@ document.addEventListener('click', (e) => {
             .catch(errmsg => {
                 console.log(errmsg)
             })
+    }
+
+    if (e.target.className == 'purchase-btn') {
+        if (parseInt(document.querySelector('.cart-number').innerText) === 0) {
+            alert('You have Nothing in Cart , Add some products to purchase !');
+        }
+        else {
+            axios.post('http://localhost:3000/order-place')
+                .then((response) => {
+                    notifyUsers(response.data.message);
+                    const cart_items = document.querySelector('#cart .cart-items');
+                    cart_items.innerHTML = ""
+                    document.querySelector('.cart-number').innerText = '0'
+                    document.querySelector('#total-value').innerText = '0';
+                })
+        }
 
     }
 })
 
-function showProductsInCart(listofproducts) {
-    cart_items.innerHTML = "";
-    listofproducts.forEach(product => {
-        const id = `album-${product.id}`;
-        const name = document.querySelector(`#${id} h3`).innerText;
-        const img_src = document.querySelector(`#${id} img`).src;
-        const price = product.price;
-        document.querySelector('.cart-number').innerText = parseInt(document.querySelector('.cart-number').innerText) + 1
-        const cart_item = document.createElement('div');
-        cart_item.classList.add('cart-row');
-        cart_item.setAttribute('id', `in-cart-${id}`);
-        cart_item.innerHTML = `
-        <span class='cart-item cart-column'>
-        <img class='cart-img' src="${img_src}" alt="">
-            <span>${name}</span>
-        </span>
-        <span class='cart-price cart-column'>${price}</span>
-        <form onsubmit='deleteCartItem(event, ${product.id})' class='cart-quantity cart-column'>
-            <input type="text" value="1">
-            <button>REMOVE</button>
-        </form>`
-        cart_items.appendChild(cart_item)
-    })
-}
+// function showProductsInCart(listofproducts) {
+//     cart_items.innerHTML = "";
+//     listofproducts.forEach(product => {
+//         const id = `album-${product.id}`;
+//         const name = document.querySelector(`#${id} h3`).innerText;
+//         const img_src = document.querySelector(`#${id} img`).src;
+//         const price = product.price;
+//         document.querySelector('.cart-number').innerText = parseInt(document.querySelector('.cart-number').innerText) + 1
+//         const cart_item = document.createElement('div');
+//         cart_item.classList.add('cart-row');
+//         cart_item.setAttribute('id', `in-cart-${id}`);
+//         cart_item.innerHTML = `
+//         <span class='cart-item cart-column'>
+//         <img class='cart-img' src="${img_src}" alt="">
+//             <span>${name}</span>
+//         </span>
+//         <span class='cart-price cart-column'>${price}</span>
+//         <form onsubmit='deleteCartItem(event, ${product.id})' class='cart-quantity cart-column'>
+//             <input type="text" value="1">
+//             <button>REMOVE</button>
+//         </form>`
+//         cart_items.appendChild(cart_item)
+//     })
+// }
+
 function deleteCartItem(e, prodId) {
     e.preventDefault();
     axios.post('http://localhost:3000/cart-delete-item', { productId: prodId })
@@ -175,15 +184,15 @@ function removeFromFrontendCart(event) {
     event.target.parentNode.parentNode.remove()
 }
 
-function displayProducts(queryParams=''){
+function displayProducts(queryParams = '') {
     axios.get(`http://localhost:3000/products/${queryParams}`)
-    .then(result=>{
-        const productsDisplayContainerDiv=document.getElementById('Products')
-        productsDisplayContainerDiv.innerHTML='';
-        result.data.products.forEach(product=>{
-            const eachProduct=document.createElement('div');
-            eachProduct.setAttribute('id',`p${product.id}`)
-            eachProduct.innerHTML=`<h3>${product.title}</h3> 
+        .then(result => {
+            const productsDisplayContainerDiv = document.getElementById('Products')
+            productsDisplayContainerDiv.innerHTML = '';
+            result.data.products.forEach(product => {
+                const eachProduct = document.createElement('div');
+                eachProduct.setAttribute('id', `p${product.id}`)
+                eachProduct.innerHTML = `<h3>${product.title}</h3> 
             <div> <img src="${product.imageUrl}" alt="Image not Found"> </div>  
             <div> <p>${product.description}</p></div> 
             <div> 
@@ -192,27 +201,27 @@ function displayProducts(queryParams=''){
                 <span> <button onClick="addToCart(${product.id})"> Add To Cart </button> </span> 
             </div> 
             <br>`
-            productsDisplayContainerDiv.appendChild(eachProduct)
+                productsDisplayContainerDiv.appendChild(eachProduct)
+            })
+
+            pagination(result, document.getElementById('productPagination'), 'Products');
         })
-        
-        pagination(result,document.getElementById('productPagination'),'Products');
-    })
-    .catch(err=>{
-        console.log(err)
-    })
+        .catch(err => {
+            console.log(err)
+        })
 
 }
 
 
 //pagination
-function pagination(response,container,place){
+function pagination(response, container, place) {
     let func;
-    if(place=='cart')
-    func='displayInCart'
-    else if(place=='Products')
-    func='displayProducts'
+    if (place == 'cart')
+        func = 'displayInCart'
+    else if (place == 'Products')
+        func = 'displayProducts'
 
-    container.innerHTML=`
+    container.innerHTML = `
     <span>
         <button id="${place}firstPage" onclick="${func}('?page=1')">1</button>
         <button id="${place}previousPage" onclick="${func}('?page=${response.data.previousPage}')">${response.data.previousPage}</button>
@@ -221,19 +230,19 @@ function pagination(response,container,place){
         <button id="${place}lastPage" onclick="${func}('?page=${response.data.lastPage}')">${response.data.lastPage}</button>
     </span>
     `
-    const firstPage=document.getElementById(`${place}firstPage`);
-    const currentPage=document.getElementById(`${place}currentPage`);
-    const previousPage=document.getElementById(`${place}previousPage`);
-    const nextPage=document.getElementById(`${place}nextPage`);
-    const lastPage=document.getElementById(`${place}lastPage`);
-    if(parseInt(currentPage.innerText)==1)
-    firstPage.style='display:none'
-    if(parseInt(previousPage.innerText)<1 || parseInt(previousPage.innerText)==firstPage.innerText)
-    previousPage.style='display:none'
-    if(parseInt(nextPage.innerText)>parseInt(lastPage.innerText))
-    nextPage.style='display:none'
-    if(parseInt(currentPage.innerText)==parseInt(lastPage.innerText) || parseInt(nextPage.innerText)==parseInt(lastPage.innerText) )
-    lastPage.style='display:none'
+    const firstPage = document.getElementById(`${place}firstPage`);
+    const currentPage = document.getElementById(`${place}currentPage`);
+    const previousPage = document.getElementById(`${place}previousPage`);
+    const nextPage = document.getElementById(`${place}nextPage`);
+    const lastPage = document.getElementById(`${place}lastPage`);
+    if (parseInt(currentPage.innerText) == 1)
+        firstPage.style = 'display:none'
+    if (parseInt(previousPage.innerText) < 1 || parseInt(previousPage.innerText) == firstPage.innerText)
+        previousPage.style = 'display:none'
+    if (parseInt(nextPage.innerText) > parseInt(lastPage.innerText))
+        nextPage.style = 'display:none'
+    if (parseInt(currentPage.innerText) == parseInt(lastPage.innerText) || parseInt(nextPage.innerText) == parseInt(lastPage.innerText))
+        lastPage.style = 'display:none'
 
 
 }
@@ -269,7 +278,7 @@ function displayInCart(queryParams = '') {
                 totalproducts++;
             })
 
-            pagination(response, document.getElementById('cartPagination'), 'cart');
+            // pagination(response,document.getElementById('cartPagination'),'cart');
             document.querySelector('#cart').style = "display:block"
             document.querySelector('#total-value').innerText = totalAmount.toFixed(2);
             document.querySelector('.cart-number').innerText = totalproducts;
@@ -280,4 +289,4 @@ function displayInCart(queryParams = '') {
             console.log(err)
         })
 
-}  
+}
