@@ -41,18 +41,44 @@ window.addEventListener('DOMContentLoaded', () => {
 
         // })
     })
+});
 
-})
+
+function addToCart(productId) {
+    axios.post('http://localhost:3000/cart', {productId: productId})
+        .then(response =>{
+            if(response.status === 200) {
+                notifyUsers(response.data.message);
+            } else {
+                throw new Error(response.data.message);
+            }
+        })
+        .catch(errMsg => {
+            console.log(errMsg);
+            notifyUsers(errMsg);
+        })
+}
+
+
+function notifyUsers(message) {
+    const container = document.getElementById('container');
+    const notification = document.createElement('div');
+    notification.classList.add('notification');
+    notification.innerHTML = `<h4>${message}<h4>`;
+    container.appendChild(notification);
+    setTimeout(()=>{
+        notification.remove();
+    },2500)
+}
 
 
 document.addEventListener('click',(e)=>{
 
     if (e.target.className=='cart-btn-bottom' || e.target.className=='cart-bottom' || e.target.className=='cart-holder'){
-        axios.get('http://localhost:3000/cart').then(carProducts => {
-            showProductsInCart(carProducts.data);
-            document.querySelector('#cart').style = "display:block;"
-
-        })
+        const cartContainer = document.getElementById('cart');
+        cartContainer.innerHTML = ''
+        getCartDetails();
+        
     }
     if (e.target.className=='cancel'){
         document.querySelector('#cart').style = "display:none;"
@@ -65,6 +91,31 @@ document.addEventListener('click',(e)=>{
         alert('This Feature is yet to be completed ')
     }
 })
+
+function showProductsInCart(listofproducts){
+    cart_items.innerHTML = "";
+    listofproducts.forEach(product => {
+        const id = `album-${product.id}`;
+        const name = document.querySelector(`#${id} h3`).innerText;
+        const img_src = document.querySelector(`#${id} img`).src;
+        const price = product.price;
+        document.querySelector('.cart-number').innerText = parseInt(document.querySelector('.cart-number').innerText)+1
+        const cart_item = document.createElement('div');
+        cart_item.classList.add('cart-row');
+        cart_item.setAttribute('id',`in-cart-${id}`);
+        cart_item.innerHTML = `
+        <span class='cart-item cart-column'>
+        <img class='cart-img' src="${img_src}" alt="">
+            <span>${name}</span>
+        </span>
+        <span class='cart-price cart-column'>${price}</span>
+        <form onsubmit='deleteCartItem(event, ${product.id})' class='cart-quantity cart-column'>
+            <input type="text" value="1">
+            <button>REMOVE</button>
+        </form>`
+        cart_items.appendChild(cart_item)
+    })
+}
 
 
 function deleteCartItem(e, prodId){
